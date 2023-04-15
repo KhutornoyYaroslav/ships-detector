@@ -1,4 +1,5 @@
 from core.data import make_data_loader
+import cv2 as cv
 
 
 def test_dataset():
@@ -8,6 +9,9 @@ def test_dataset():
     IS_TRAIN = False
     BATCH_SIZE = 1
 
-    data_loader = make_data_loader(ROOT_DIR, TYPE, INPUT_SIZE, IS_TRAIN, 1)
+    data_loader = make_data_loader(ROOT_DIR, TYPE, INPUT_SIZE, IS_TRAIN, BATCH_SIZE)
 
-    # TODO: iterate over data and visualize it
+    for i in data_loader:
+        cv.namedWindow('image', 500)
+        cv.imshow('image', i)
+        cv.waitKey()

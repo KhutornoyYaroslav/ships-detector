@@ -4,12 +4,12 @@ from .transforms import TransformCompose, Resize, ConvertFromInts, Clip, Normali
 
 class ShipsDataset(Dataset):
     def __init__(self, root_dir: str, image_size, is_train: bool = True):
-        # TODO: implement
-        return None
+        self.root_dir = root_dir
+        self.image_size = image_size
+        self.is_train = is_train
 
-    def __len__(self):
-        # TODO: implement
-        return None
+    def __len__(self, listing):
+        return len(listing)
 
     def build_transforms(self, image_size, is_train: bool = True):
         if is_train:
@@ -25,7 +25,7 @@ class ShipsDataset(Dataset):
                 Clip()
             ]
 
-        transform = transform + [Normalize(), ToTensor()]
+        transform += [Normalize(), ToTensor()]
         transform = TransformCompose(transform)
         return transform
 
