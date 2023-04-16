@@ -1,11 +1,11 @@
 import json
+import ast
 from torch.utils.data import Dataset
 from .transforms import TransformCompose, Resize, ConvertFromInts, Clip, Normalize, ToTensor
 
 
 def parse_annotation(path: str):
-    # TODO: implement
-    return None
+    return ast.literal_eval(json.dumps(path))
 
 
 class ShipsDataset(Dataset):
@@ -36,5 +36,7 @@ class ShipsDataset(Dataset):
         return transform
 
     def __getitem__(self, idx):
-        # TODO: implement
-        return None
+        for i, j in parse_annotation(idx).items():
+            for key, value in j.items():
+                yield key
+                yield value
