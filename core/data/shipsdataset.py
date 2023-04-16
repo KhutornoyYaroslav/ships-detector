@@ -1,5 +1,11 @@
+import json
 from torch.utils.data import Dataset
 from .transforms import TransformCompose, Resize, ConvertFromInts, Clip, Normalize, ToTensor
+
+
+def parse_annotation(path: str):
+    # TODO: implement
+    return None
 
 
 class ShipsDataset(Dataset):
