@@ -1,13 +1,10 @@
-from torchvision.models.detection import maskrcnn_resnet50_fpn_v2
 import torchvision
-import torch
+from torchvision.models.detection.faster_rcnn import FastRCNNPredictor
 
 
-def build_model():
-    # TODO: implement
-    model = maskrcnn_resnet50_fpn_v2(weights=torchvision.models.detection.MaskRCNN_ResNet50_FPN_Weights.DEFAULT,
-                                     progress=True,
-                                     num_classes=2,
-                                     trainable_backbone_layers=5)
-    model.eval()
+def build_model(num_classes: int, pretrained: bool = True):
+    model = torchvision.models.detection.fasterrcnn_resnet50_fpn(pretrained=pretrained)
+    in_features = model.roi_heads.box_predictor.cls_score.in_features
+    model.roi_heads.box_predictor = FastRCNNPredictor(in_features, num_classes)
     return model
+

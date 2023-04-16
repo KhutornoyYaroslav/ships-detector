@@ -2,7 +2,6 @@
 	"data": [
 		{
 			"img_path": "./imgs/000000.png",
-			"mask_path": "./masks/000000.png",
 			"objects": [
 				{
 					"class": 0,
@@ -16,7 +15,6 @@
 		},
 		{
 			"img_path": "./imgs/000001.png",
-			"mask_path": "./masks/000001.png",
 			"objects": [
 				{
 					"class": 0,
