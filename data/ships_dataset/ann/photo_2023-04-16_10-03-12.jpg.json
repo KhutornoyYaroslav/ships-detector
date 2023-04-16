@@ -1,0 +1,106 @@
+{
+    "description": "",
+    "tags": [],
+    "size": {
+        "height": 720,
+        "width": 1280
+    },
+    "objects": [
+        {
+            "id": 1279793471,
+            "classId": 11529738,
+            "description": "",
+            "geometryType": "rectangle",
+            "labelerLogin": "hutorok007@gmail.com",
+            "createdAt": "2023-04-16T07:05:22.772Z",
+            "updatedAt": "2023-04-16T07:06:02.998Z",
+            "tags": [],
+            "classTitle": "Military",
+            "points": {
+                "exterior": [
+                    [
+                        271,
+                        465
+                    ],
+                    [
+                        343,
+                        576
+                    ]
+                ],
+                "interior": []
+            }
+        },
+        {
+            "id": 1279793473,
+            "classId": 11529738,
+            "description": "",
+            "geometryType": "rectangle",
+            "labelerLogin": "hutorok007@gmail.com",
+            "createdAt": "2023-04-16T07:05:45.173Z",
+            "updatedAt": "2023-04-16T07:06:02.998Z",
+            "tags": [],
+            "classTitle": "Military",
+            "points": {
+                "exterior": [
+                    [
+                        347,
+                        84
+                    ],
+                    [
+                        1186,
+                        333
+                    ]
+                ],
+                "interior": []
+            }
+        },
+        {
+            "id": 1279793476,
+            "classId": 11529742,
+            "description": "",
+            "geometryType": "rectangle",
+            "labelerLogin": "hutorok007@gmail.com",
+            "createdAt": "2023-04-16T07:05:55.373Z",
+            "updatedAt": "2023-04-16T07:06:02.998Z",
+            "tags": [],
+            "classTitle": "Civilian",
+            "points": {
+                "exterior": [
+                    [
+                        1010,
+                        29
+                    ],
+                    [
+                        1248,
+                        230
+                    ]
+                ],
+                "interior": []
+            }
+        },
+        {
+            "id": 1279793478,
+            "classId": 11529741,
+            "description": "",
+            "geometryType": "rectangle",
+            "labelerLogin": "hutorok007@gmail.com",
+            "createdAt": "2023-04-16T07:06:02.845Z",
+            "updatedAt": "2023-04-16T07:06:02.845Z",
+            "tags": [],
+            "classTitle": "Tanker",
+            "points": {
+                "exterior": [
+                    [
+                        544,
+                        425
+                    ],
+                    [
+                        1168,
+                        600
+                    ]
+                ],
+                "interior": []
+            }
+        }
+    ]
+}

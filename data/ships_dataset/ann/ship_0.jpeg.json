@@ -1,0 +1,34 @@
+{
+    "description": "",
+    "tags": [],
+    "size": {
+        "height": 720,
+        "width": 1280
+    },
+    "objects": [
+        {
+            "id": 1279793479,
+            "classId": 11529740,
+            "description": "",
+            "geometryType": "rectangle",
+            "labelerLogin": "hutorok007@gmail.com",
+            "createdAt": "2023-04-16T07:06:12.568Z",
+            "updatedAt": "2023-04-16T07:06:12.568Z",
+            "tags": [],
+            "classTitle": "Barge",
+            "points": {
+                "exterior": [
+                    [
+                        716,
+                        194
+                    ],
+                    [
+                        862,
+                        338
+                    ]
+                ],
+                "interior": []
+            }
+        }
+    ]
+}
