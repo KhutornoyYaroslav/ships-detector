@@ -20,7 +20,6 @@ class Resize(object):
         self.interpolation = interpolation
 
     def __call__(self, image, labels=None, bboxes=None):
-        image = cv.resize(image, self.size, interpolation=cv.INTER_AREA)
         if bboxes is not None:
             width_k = self.size[0] / image.shape[1]
             height_k = self.size[1] / image.shape[0]
@@ -29,6 +28,7 @@ class Resize(object):
                 bboxes[i][1] = int(height_k * bboxes[i][1])
                 bboxes[i][2] = int(width_k * bboxes[i][2])
                 bboxes[i][3] = int(height_k * bboxes[i][3])
+        image = cv.resize(image, self.size, interpolation=cv.INTER_AREA)
         return image, labels, bboxes
 
 
