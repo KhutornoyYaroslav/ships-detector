@@ -6,7 +6,7 @@ from core.data.shipsdataset import ShipsDataset
 
 
 def test_dataset():
-    ROOT_DIR = "./data/ships_dataset/"
+    ROOT_DIR = "./data/output1/Furzikov_01"
     TYPE = "ShipsDataset"
     INPUT_SIZE = (512, 512)
     IS_TRAIN = False
@@ -28,11 +28,11 @@ def test_dataset():
         # Draw bboxes
         for bbox, label in zip(bboxes, labels):
             cv.rectangle(cv_img, (int(bbox[0]), int(bbox[1])), (int(bbox[2]), int(bbox[3])), (0, 255, 0), 1)
-            label_str = ShipsDataset.CLASSES_INT2STR[str(label)]
+            label_str = ShipsDataset.CLASSES_INT2STR[label]
             cv.putText(cv_img, label_str, (int(bbox[0]), int(bbox[1])), cv.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0))
 
         cv.imshow('image', cv_img)
-        cv.waitKey()
+        cv.waitKey(100)
 
 
 if __name__ == "__main__":

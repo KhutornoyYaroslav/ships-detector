@@ -19,11 +19,11 @@ class ShipsDataset(Dataset):
                        'civilian': 3,
                        'barge': 4}
 
-    CLASSES_INT2STR = {'0': 'military',
-                       '1': 'boat',
-                       '2': 'tanker',
-                       '3': 'civilian',
-                       '4': 'barge'}
+    CLASSES_INT2STR = {0: 'military',
+                       1: 'boat',
+                       2: 'tanker',
+                       3: 'civilian',
+                       4: 'barge'}
 
     def __init__(self, root_dir, image_size, is_train):
         self.root_dir = root_dir
