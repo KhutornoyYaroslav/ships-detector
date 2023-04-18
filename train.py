@@ -8,8 +8,7 @@ from core.solver import make_optimizer
 from core.utils.checkpoint import CheckPointer
 
 
-def train_step(model, device, data_entry, optimizer, loss_stat):
-    # Get training sample
+def prepare_data(data_entry, device):
     imgs, labels, bboxes = data_entry
 
     # Prepare images
@@ -36,6 +35,61 @@ def train_step(model, device, data_entry, optimizer, loss_stat):
 
         targets.append(d)
 
+    return imgs, targets
+
+
+def eval(model, data_loader, device):
+    torch.cuda.empty_cache()
+    # model.eval() # No need
+
+    stats = {
+        'sample_count': 0.0,
+        'loss_sum': 0.0,
+        'loss_classifier': 0.0,
+        'loss_box_reg': 0.0,
+        'loss_objectness': 0.0,
+        'loss_rpn_box_reg': 0.0
+    }
+
+    for data_entry in tqdm(data_loader):
+        imgs, targets = prepare_data(data_entry, device)
+
+        # Forward images
+        with torch.no_grad():
+            loss_dict = model.train_forward(imgs, targets)
+
+        # Calculate loss
+        loss = sum(loss for loss in loss_dict.values())
+        stats['loss_sum'] += loss.item()
+        stats['loss_classifier'] += loss_dict["loss_classifier"].item()
+        stats['loss_box_reg'] += loss_dict["loss_box_reg"].item()
+        stats['loss_objectness'] += loss_dict["loss_objectness"].item()
+        stats['loss_rpn_box_reg'] += loss_dict["loss_rpn_box_reg"].item()
+        stats['sample_count'] += 1
+
+    # Return results
+    stats['loss_sum'] /= stats['sample_count']
+    stats['loss_classifier'] /= stats['sample_count']
+    stats['loss_box_reg'] /= stats['sample_count']
+    stats['loss_objectness'] /= stats['sample_count']
+    stats['loss_rpn_box_reg'] /= stats['sample_count']
+
+    result_dict = {
+        'loss_sum': stats['loss_sum'],
+        'loss_classifier': stats['loss_classifier'],
+        'loss_box_reg': stats['loss_box_reg'],
+        'loss_objectness': stats['loss_objectness'],
+        'loss_rpn_box_reg': stats['loss_rpn_box_reg'],
+    }
+
+    torch.cuda.empty_cache()
+    return result_dict
+
+
+def train_step(model, device, data_entry, optimizer, loss_stat):
+    # Prepare training sample
+    imgs, targets = prepare_data(data_entry, device)
+
     # Do prediction
     model.train()
     loss_dict = model.train_forward(imgs, targets)
@@ -53,7 +107,7 @@ def train_step(model, device, data_entry, optimizer, loss_stat):
     optimizer.step()
 
 
-def train(model, data_loader, optimizer, checkpointer, device, arguments, max_epochs):
+def train(model, data_loader, valid_data_loader, optimizer, checkpointer, device, arguments, max_epochs):
     iters_per_epoch = len(data_loader)
     total_steps = iters_per_epoch * max_epochs
     start_epoch = arguments["epoch"]
@@ -76,8 +130,11 @@ def train(model, data_loader, optimizer, checkpointer, device, arguments, max_ep
             'loss_rpn_box_reg': 0
         }
 
+        # Train one epoch
         for iteration, data_entry in pbar:
             global_step = epoch * iters_per_epoch + iteration
+
+            # Do training step
             train_step(model, device, data_entry, optimizer, loss_stat)
 
             # Update progress bar
@@ -97,12 +154,24 @@ def train(model, data_loader, optimizer, checkpointer, device, arguments, max_ep
         print("Saving results to 'model_{:06d}'.".format(global_step))
         checkpointer.save("model_{:06d}".format(global_step), **arguments)
 
+        # Evaluate model
+        print('\nEvaluation ...')
+        eval_loss_stat = eval(model, valid_data_loader, device)
+
+        print(('\n' + 'Evaluation results:' + '%10s' * 5) % ('loss', 'loss_cls', 'loss_box', 'loss_obj', 'loss_rpn'))
+        print('                   ' + '%10.4g%10.4g%10.4g%10.4g%10.4g' % (eval_loss_stat['loss_sum'],
+                                                                          eval_loss_stat['loss_classifier'],
+                                                                          eval_loss_stat['loss_box_reg'],
+                                                                          eval_loss_stat['loss_objectness'],
+                                                                          eval_loss_stat['loss_rpn_box_reg']))
+
     return model
 
 
 def main():
     # Parameters
     TRAIN_DATASET_ROOT = './data/output1/Furzikov_01/'
+    VALID_DATASET_ROOT = './data/output1/Furzikov_01/'
     INPUT_SIZE = (512, 512)
     BATCH_SIZE = 1
     DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
@@ -123,8 +192,9 @@ def main():
     print(f"Set device to '{DEVICE}'")
     device = torch.device(DEVICE)
 
-    # Create train data
+    # Create datasets
     data_loader = make_data_loader(TRAIN_DATASET_ROOT, 'ShipsDataset', INPUT_SIZE, True, BATCH_SIZE)
+    valid_data_loader = make_data_loader(VALID_DATASET_ROOT, 'ShipsDataset', INPUT_SIZE, False, BATCH_SIZE)
 
     # Create model
     model = build_model('ShipsDetector', 5+1)
@@ -140,7 +210,7 @@ def main():
     arguments.update(extra_checkpoint_data)
 
     # Train model
-    return train(model, data_loader, optimizer, checkpointer, device, arguments, MAX_EPOCHS)
+    return train(model, data_loader, valid_data_loader, optimizer, checkpointer, device, arguments, MAX_EPOCHS)
 
 
 if __name__ == '__main__':
