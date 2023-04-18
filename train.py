@@ -6,6 +6,7 @@ from core.data import make_data_loader
 from core.model import build_model
 from core.solver import make_optimizer
 from core.utils.checkpoint import CheckPointer
+from torch.utils.tensorboard import SummaryWriter
 
 
 def prepare_data(data_entry, device):
@@ -74,16 +75,8 @@ def eval(model, data_loader, device):
     stats['loss_objectness'] /= stats['sample_count']
     stats['loss_rpn_box_reg'] /= stats['sample_count']
 
-    result_dict = {
-        'loss_sum': stats['loss_sum'],
-        'loss_classifier': stats['loss_classifier'],
-        'loss_box_reg': stats['loss_box_reg'],
-        'loss_objectness': stats['loss_objectness'],
-        'loss_rpn_box_reg': stats['loss_rpn_box_reg'],
-    }
-
     torch.cuda.empty_cache()
-    return result_dict
+    return stats
 
 
 def train_step(model, device, data_entry, optimizer, loss_stat):
@@ -107,7 +100,7 @@ def train_step(model, device, data_entry, optimizer, loss_stat):
     optimizer.step()
 
 
-def train(model, data_loader, valid_data_loader, optimizer, checkpointer, device, arguments, max_epochs):
+def train(model, data_loader, valid_data_loader, optimizer, checkpointer, device, arguments, max_epochs, summary_writer):
     iters_per_epoch = len(data_loader)
     total_steps = iters_per_epoch * max_epochs
     start_epoch = arguments["epoch"]
@@ -154,6 +147,13 @@ def train(model, data_loader, valid_data_loader, optimizer, checkpointer, device
         print("Saving results to 'model_{:06d}'.".format(global_step))
         checkpointer.save("model_{:06d}".format(global_step), **arguments)
 
+        if summary_writer:
+            with torch.no_grad():
+                summary_writer.add_scalar('train/loss', sum(loss_stat.values()) / (iteration + 1), global_step=global_step)
+                for key, value in loss_stat.items():
+                    summary_writer.add_scalar(f'train/{key}', value / (iteration + 1), global_step=global_step)
+                summary_writer.flush()
+
         # Evaluate model
         print('\nEvaluation ...')
         eval_loss_stat = eval(model, valid_data_loader, device)
@@ -164,6 +164,13 @@ def train(model, data_loader, valid_data_loader, optimizer, checkpointer, device
                                                                           eval_loss_stat['loss_box_reg'],
                                                                           eval_loss_stat['loss_objectness'],
                                                                           eval_loss_stat['loss_rpn_box_reg']))
+
+        if summary_writer:
+            with torch.no_grad():
+                summary_writer.add_scalar('validation/loss', eval_loss_stat['loss_sum'], global_step=global_step)
+                for key, value in eval_loss_stat.items():
+                    summary_writer.add_scalar(f'validation/{key}', value / (iteration + 1), global_step=global_step)
+                summary_writer.flush()
 
     return model
 
@@ -209,8 +216,11 @@ def main():
     extra_checkpoint_data = checkpointer.load()
     arguments.update(extra_checkpoint_data)
 
+    # Create tensorboard writer
+    summary_writer = SummaryWriter(log_dir=os.path.join(OUTPUT_DIR, 'tf_logs'))
+
     # Train model
-    return train(model, data_loader, valid_data_loader, optimizer, checkpointer, device, arguments, MAX_EPOCHS)
+    return train(model, data_loader, valid_data_loader, optimizer, checkpointer, device, arguments, MAX_EPOCHS, summary_writer)
 
 
 if __name__ == '__main__':
