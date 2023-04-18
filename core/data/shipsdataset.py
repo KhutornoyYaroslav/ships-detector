@@ -40,8 +40,7 @@ class ShipsDataset(Dataset):
         self.transforms = self.build_transforms(image_size, is_train)
 
     def __len__(self):
-        # return len(self.imgs)
-        return 4
+        return len(self.imgs)
 
     def build_transforms(self, image_size, is_train: bool = True):
         if is_train:
