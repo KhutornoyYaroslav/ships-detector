@@ -7,7 +7,7 @@ class ShipsDetector(nn.Module):
         super().__init__()
         # self.weights = FasterRCNN_ResNet50_FPN_V2_Weights.DEFAULT
         # self.model = fasterrcnn_resnet50_fpn_v2(weights=self.weights)
-        self.model = fasterrcnn_resnet50_fpn_v2(num_classes=num_classes)
+        self.model = fasterrcnn_resnet50_fpn_v2(num_classes=num_classes, pretrained=True)
 
     def forward(self, images):
         return self.model(images)

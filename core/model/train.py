@@ -3,9 +3,11 @@ import torch.nn as nn
 import torch.optim as optim
 from core.model import build_model
 from core.data import make_data_loader
+from core.solver import make_optimizer
+from core.utils import checkpoint
 
 
-class Train:
+class Trainer(object):
 
     def __init__(self, num_classes: int,
                  num_epochs: int,
@@ -16,45 +18,73 @@ class Train:
 
         self.num_classes = num_classes
         self.num_epochs = num_epochs
-        self.dataloader = dataloader
         self.rpn_loss_fn = rpn_loss_fn
         self.classification_loss = classification_loss
         self.regression_loss = regression_loss
 
-    def train_model(self):
+    def train_step(self, model, data_loader, optimizer, checkpointer, device, arguments, lr, i, data):
+        for images, targets in data_loader:
+            # Every data instance is an input + label pair
+            inputs, labels = data
 
-        # Change number of classes maybe
-        model = build_model(num_classes=self.num_classes, pretrained=True)
+            # Zero your gradients for every batch!
+            optimizer.zero_grad()
 
-        model = nn.Sequential(*list(model.children())[:-2])
+            # Make predictions for this batch
+            outputs = model(inputs)
 
-        optimizer = optim.Adam(model.parameters(), lr=0.001)
+            # Compute the loss and its gradients
+            loss = loss_fn(outputs, labels)
+            loss.backward()
 
-        dataloader = make_data_loader(root_dir=self.dataloader['root_dir'],
-                                      type=self.dataloader['type'],
-                                      model_input_size=self.dataloader['model_input_size'],
-                                      is_train=self.dataloader['is_train'],
-                                      batch_size=self.dataloader['batch_size'])
+            # Adjust learning weights
+            optimizer.step()
 
-        # Обучение модели
-        for epoch in range(self.num_epochs):
-            for images, targets in dataloader:
-                # Clear gradients
-                optimizer.zero_grad()
+            # Gather data and report
+            running_loss += loss.item()
+            if i % 1000 == 999:
+                last_loss = running_loss / 1000  # loss per batch
+                print('  batch {} loss: {}'.format(i + 1, last_loss))
+                tb_x = epoch_index * len(data_loader) + i + 1
+                tb_writer.add_scalar('Loss/train', last_loss, tb_x)
+                running_loss = 0.
 
-                # Counting loss func
-                rpn_loss = rpn_loss_fn(output_rpn, targets)
-                classification_loss = classification_loss_fn(output_classification, targets)
-                regression_loss = regression_loss_fn(output_regression, targets)
+        return last_loss
 
-                # Sum loss func
-                total_loss = rpn_loss + classification_loss + regression_loss
+    def train(self, model, data_loader, optimizer, checkpointer, device, arguments, lr):
+        for i, data in enumerate(data_loader):
+            self.train_step(data_loader=data_loader, lr=lr, model=model, optimizer=optimizer, i=i, data=data)
 
-                # Gradient backward spreading
-                total_loss.backward()
+    def main(self):
+        # Parameters
+        TRAIN_DATASET_ROOT = './data/output1/Furzikov_01/'
+        INPUT_SIZE = (512, 512)
+        BATCH_SIZE = 8
+        DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
+        LEARNING_RATE = 1e-3
+        OUTPUT_DIR = './output/test/'
 
-                # Update weights
-                optimizer.step()
+        # Create device
+        print(f"Set device to '{DEVICE}'")
+        device = torch.device(DEVICE)
 
+        # Create model
+        model = build_model('ShipsDetector', self.num_classes)
+        model.to(device)
+
+        # Create train data
+        data_loader = make_data_loader(TRAIN_DATASET_ROOT, 'ShipsDataset', INPUT_SIZE, True, BATCH_SIZE)
+
+        # Create optimizer
+        optimizer = make_optimizer(LEARNING_RATE, model)
+
+        # Create checkpointer
+        arguments = {"epoch": 0}
+        checkpointer = checkpoint.CheckPointer(model, optimizer, None, OUTPUT_DIR, True)
+        extra_checkpoint_data = checkpointer.load()
+        arguments.update(extra_checkpoint_data)
         # Saving model
-        torch.save(model.state_dict(), 'faster_rcnn.pth')
+        # torch.save(model.state_dict(), 'faster_rcnn.pth')
+
+        # Train model
+        return self.train(data_loader=data_loader, lr=LEARNING_RATE, model=model, optimizer=optimizer)
