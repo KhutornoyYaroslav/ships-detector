@@ -9,5 +9,8 @@ class ShipsDetector(nn.Module):
         # self.model = fasterrcnn_resnet50_fpn_v2(weights=self.weights)
         self.model = fasterrcnn_resnet50_fpn_v2(num_classes=num_classes)
 
-    def forward(self, images):
-        return self.model(images)
+    def train_forward(self, images, targets):
+        return self.model(images, targets)
+
+    # def infer_forward(self, images):
+    #     return self.model(images)

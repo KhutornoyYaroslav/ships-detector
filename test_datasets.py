@@ -27,6 +27,10 @@ def test_dataset():
 
         # Draw bboxes
         for bbox, label in zip(bboxes, labels):
+            # Skip pad items
+            if all(np.isclose(x, 0) for x in bbox):
+                continue
+
             cv.rectangle(cv_img, (int(bbox[0]), int(bbox[1])), (int(bbox[2]), int(bbox[3])), (0, 255, 0), 1)
             label_str = ShipsDataset.CLASSES_INT2STR[label]
             cv.putText(cv_img, label_str, (int(bbox[0]), int(bbox[1])), cv.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0))
