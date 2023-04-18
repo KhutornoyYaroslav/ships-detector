@@ -1,11 +1,7 @@
 import torch
 
-def make_optimizer(cfg, lr:float, model:torch.nn.Module):
-    optimizer = None
-    if cfg.SOLVER.TYPE == 'Adam':
-        optimizer = torch.optim.Adam(model.parameters(), lr=lr)
-
-    return optimizer
+def make_optimizer(lr:float, model:torch.nn.Module):
+    return torch.optim.Adam(model.parameters(), lr=lr)
 
 def make_lr_scheduler(cfg, optimizer):
     lambda_ = lambda epoch: cfg.SOLVER.LR_LAMBDA ** epoch
