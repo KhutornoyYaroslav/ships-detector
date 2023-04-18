@@ -33,6 +33,8 @@ class ShipsDataset(Dataset):
         self.annos = sorted(glob(root_dir + "/ann/*"))
         assert len(self.imgs) == len(self.annos)
 
+        print('Read dataset {0}. Size: {1}.'.format(root_dir, len(self.imgs)))
+
         for i in range(len(self.annos)):
             json_data = codecs.open(self.annos[i], 'r').read()
             self.annos[i] = json.loads(json_data)

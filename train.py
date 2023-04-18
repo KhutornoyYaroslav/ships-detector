@@ -177,8 +177,8 @@ def train(model, data_loader, valid_data_loader, optimizer, checkpointer, device
 
 def main():
     # Parameters
-    TRAIN_DATASET_ROOT = './data/output1/Furzikov_01/'
-    VALID_DATASET_ROOT = './data/output1/Furzikov_01/'
+    TRAIN_DATASET_ROOTS = ['./data/output1/Furzikov_01/']
+    VALID_DATASET_ROOTS = ['./data/output1/Furzikov_01/']
     INPUT_SIZE = (512, 512)
     BATCH_SIZE = 1
     DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
@@ -200,8 +200,8 @@ def main():
     device = torch.device(DEVICE)
 
     # Create datasets
-    data_loader = make_data_loader(TRAIN_DATASET_ROOT, 'ShipsDataset', INPUT_SIZE, True, BATCH_SIZE)
-    valid_data_loader = make_data_loader(VALID_DATASET_ROOT, 'ShipsDataset', INPUT_SIZE, False, BATCH_SIZE)
+    data_loader = make_data_loader(TRAIN_DATASET_ROOTS, 'ShipsDataset', INPUT_SIZE, True, BATCH_SIZE)
+    valid_data_loader = make_data_loader(VALID_DATASET_ROOTS, 'ShipsDataset', INPUT_SIZE, False, BATCH_SIZE)
 
     # Create model
     model = build_model('ShipsDetector', 5+1)

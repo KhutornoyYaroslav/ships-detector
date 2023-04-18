@@ -1,6 +1,6 @@
 import torch
 from .shipsdataset import ShipsDataset
-from torch.utils.data import Dataset, RandomSampler, SequentialSampler, BatchSampler, DataLoader
+from torch.utils.data import Dataset, RandomSampler, SequentialSampler, BatchSampler, DataLoader, ConcatDataset
 
 
 _DATASET_TYPES = {
@@ -28,12 +28,19 @@ def create_loader(dataset: Dataset,
     return data_loader
 
 
-def make_data_loader(root_dir,
+def make_data_loader(root_dirs,
                      type,
                      model_input_size,
                      is_train,
                      batch_size) -> DataLoader:
 
-    dataset = build_dataset(type, root_dir, model_input_size, is_train=is_train)
+    # Create datasets
+    datasets = []
+
+    for root_dir in root_dirs:
+        dataset = build_dataset(type, root_dir, model_input_size, is_train=is_train)
+        datasets.append(dataset)
+
+    dataset = ConcatDataset(datasets)
     data_loader = create_loader(dataset, is_train, batch_size, 8, True)
     return data_loader
