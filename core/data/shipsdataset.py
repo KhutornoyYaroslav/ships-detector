@@ -25,6 +25,8 @@ class ShipsDataset(Dataset):
                        3: 'civilian',
                        4: 'barge'}
 
+    MAX_PADDING = 32
+
     def __init__(self, root_dir, image_size, is_train):
         self.root_dir = root_dir
         self.imgs = sorted(glob(root_dir + "/img/*"))
@@ -38,7 +40,8 @@ class ShipsDataset(Dataset):
         self.transforms = self.build_transforms(image_size, is_train)
 
     def __len__(self):
-        return len(self.imgs)
+        # return len(self.imgs)
+        return 4
 
     def build_transforms(self, image_size, is_train: bool = True):
         if is_train:
@@ -76,37 +79,11 @@ class ShipsDataset(Dataset):
             x1y1, x2y2 = obj['points']['exterior']
             bboxes.append([*x1y1, *x2y2])
 
+        # Pad bboxes, labels to fix size
+        bboxes = bboxes + [[0, 0, 0, 0]] * (self.MAX_PADDING - len(bboxes))
+        labels = labels + [-1] * (self.MAX_PADDING - len(labels))
+
         # Apply transforms
         img, labels, bboxes = self.transforms(img, labels, bboxes)
 
         return img, labels, bboxes
-
-        # anno_path = self.annos[idx]
-        # anno = json.dumps(anno_path)
-
-        # class_id = self.ship_classes[anno[]]
-
-        # meta_item = parse_annotation(json.dumps(anno_path))["data"][idx]
-        # img_path = os.path.join(self.imgs, meta_item[0])
-        # image = cv.imread(img_path)
-
-        # # Read bounding rects (from [x, y, w, h] to [x1, y1, x2, y2])
-        # rects = np.array([[r[0], r[1], r[0] + r[2], r[1] + r[3]] for r in meta_item["rects"]], dtype=np.int)
-
-        # # Pad rects array to max size
-        # rects_real_num = rects.shape[0]
-        # assert rects_real_num in range(0, self.max_rects + 1)
-        # if rects_real_num == self.max_rects:
-        #     pass
-        # elif rects_real_num == 0:
-        #     rects = np.zeros(shape=(self.max_rects, 4), dtype=np.int)
-        # else:
-        #     dummy_rects = np.zeros(shape=(self.max_rects - rects_real_num, 4), dtype=np.int)
-        #     rects = np.concatenate([rects, dummy_rects])
-        # assert rects.shape == (self.max_rects, 4)
-
-        # # Prepare data
-        # if self.transforms:
-        #     image, rects = self.transforms(image, rects)
-
-        # return image, rects, rects_real_num
