@@ -5,7 +5,7 @@ import cv2 as cv
 import numpy as np
 from glob import glob
 from torch.utils.data import Dataset
-from .transforms import TransformCompose, Resize, ConvertFromInts, Clip, Normalize, ToTensor
+from .transforms import TransformCompose, Resize, ConvertFromInts, Clip, Normalize, ToTensor, RandomHue, RandomGamma
 
 
 def parse_annotation(path: str):
@@ -13,17 +13,25 @@ def parse_annotation(path: str):
 
 
 class ShipsDataset(Dataset):
-    CLASSES_STR2INT = {'military': 0,
-                       'boat': 1,
-                       'tanker': 2,
-                       'civilian': 3,
-                       'barge': 4}
+    CLASSES_STR2INT = {
+        'military': 1,
+        'boat': 2,
+        'tanker': 3,
+        'civilian': 4,
+        'barge': 5,
+        'small_military': 6,
+        'civilian_small': 7
+    }
 
-    CLASSES_INT2STR = {0: 'military',
-                       1: 'boat',
-                       2: 'tanker',
-                       3: 'civilian',
-                       4: 'barge'}
+    CLASSES_INT2STR = {
+        1: 'military',
+        2: 'boat',
+        3: 'tanker',
+        4: 'civilian',
+        5: 'barge',
+        6: 'small_military',
+        7: 'civilian_small'
+    }
 
     MAX_PADDING = 32
 
@@ -33,7 +41,7 @@ class ShipsDataset(Dataset):
         self.annos = sorted(glob(root_dir + "/ann/*"))
         assert len(self.imgs) == len(self.annos)
 
-        print('Read dataset {0}. Size: {1}.'.format(root_dir, len(self.imgs)))
+        print("Read dataset from: '{0}'. Size: {1}.".format(root_dir, len(self.imgs)))
 
         for i in range(len(self.annos)):
             json_data = codecs.open(self.annos[i], 'r').read()
@@ -49,6 +57,8 @@ class ShipsDataset(Dataset):
             transform = [
                 Resize(image_size),
                 ConvertFromInts(),
+                RandomHue(30, 0.5),
+                RandomGamma(0.3, 3.0, 0.5),
                 Clip()
             ]
         else:
@@ -69,16 +79,15 @@ class ShipsDataset(Dataset):
         img = cv.imread(self.imgs[idx])
         # img = cv.cvtColor(img, cv.COLOR_BGR2RGB)
 
-        # Read labels
+        # Read labels, bboxes
         labels = []
-        for obj in anno['objects']:
-            labels.append(self.CLASSES_STR2INT[obj['classTitle']])
-
-        # Read bboxes
         bboxes = []
         for obj in anno['objects']:
             x1y1, x2y2 = obj['points']['exterior']
+            if x2y2[0] - x1y1[0] <= 0 or x2y2[1] - x1y1[1] <= 0:
+                continue
             bboxes.append([*x1y1, *x2y2])
+            labels.append(self.CLASSES_STR2INT[obj['classTitle']])
 
         # Pad bboxes, labels to fix size
         bboxes = bboxes + [[0, 0, 0, 0]] * (self.MAX_PADDING - len(bboxes))

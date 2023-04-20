@@ -61,6 +61,63 @@ class Clip:
         return image, labels, bboxes
 
 
+class ConvertColor(object):
+    def __init__(self, current, transform):
+        self.transform = transform
+        self.current = current
+
+    def __call__(self, image, labels=None, bboxes=None):
+        if self.current == 'BGR' and self.transform == 'HSV':
+            image = cv.cvtColor(image, cv.COLOR_BGR2HSV)
+        elif self.current == 'RGB' and self.transform == 'HSV':
+            image = cv.cvtColor(image, cv.COLOR_RGB2HSV)
+        elif self.current == 'BGR' and self.transform == 'RGB':
+            image = cv.cvtColor(image, cv.COLOR_BGR2RGB)
+        elif self.current == 'HSV' and self.transform == 'BGR':
+            image = cv.cvtColor(image, cv.COLOR_HSV2BGR)
+        elif self.current == 'HSV' and self.transform == "RGB":
+            image = cv.cvtColor(image, cv.COLOR_HSV2RGB)
+        else:
+            raise NotImplementedError
+        return image, labels, bboxes
+
+
+class RandomHue(object):
+    def __init__(self, delta:float=30.0, probabilty:float=0.5):
+        self.delta = np.clip(delta, 0.0, 360.0)
+        self.probabilty = np.clip(probabilty, 0.0, 1.0)
+
+    def __call__(self, image, labels=None, bboxes=None):
+        if np.random.choice([0, 1], size=1, p=[1-self.probabilty, self.probabilty]):
+            cvt = ConvertColor(current="RGB", transform='HSV')
+            image, _, _ = cvt(image)
+            ru = np.random.uniform(-self.delta, self.delta)
+            image[:, :, 0] += ru
+            image[:, :, 0][image[:, :, 0] > 360.0] -= 360.0
+            image[:, :, 0][image[:, :, 0] < 0.0] += 360.0
+            cvt = ConvertColor(current="HSV", transform='RGB')
+            image, _, _ = cvt(image)
+        return image, labels, bboxes
+
+
+class RandomGamma(object):
+    def __init__(self, lower:float=0.5, upper:float=2.0, probabilty:float=0.5):
+        self.lower = lower
+        self.upper = upper
+        self.probabilty = np.clip(probabilty, 0.0, 1.0)
+        assert self.upper >= self.lower, "contrast upper must be >= lower."
+        assert self.lower >= 0, "contrast lower must be non-negative."
+
+    def __call__(self, image, labels=None, bboxes=None):
+        assert image.dtype == np.float32, "image dtype must be float"
+        if np.random.choice([0, 1], size=1, p=[1-self.probabilty, self.probabilty]):
+            gamma = np.random.uniform(self.lower, self.upper)
+            if np.mean(image) > 100:
+                image = pow(image / 255., gamma) * 255.
+        return image, labels, bboxes
+
+
+
 class ToTensor:
     def __call__(self, cvimage, labels=None, bboxes=None):
         img = torch.from_numpy(cvimage.astype(np.float32)).permute(2, 0, 1)
