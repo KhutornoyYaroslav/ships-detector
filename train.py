@@ -1,9 +1,8 @@
 import os
-from turtle import clear
 import torch
 import numpy as np
 from tqdm import tqdm
-from glob import glob
+from parameters import *
 from core.data import make_data_loader
 from core.model import build_model
 from core.solver import make_optimizer
@@ -178,16 +177,6 @@ def train(model, data_loader, valid_data_loader, optimizer, checkpointer, device
 
 
 def main():
-    # Parameters
-    TRAIN_DATASET_ROOTS = glob("./data/dataset_new/train/*")
-    VALID_DATASET_ROOTS = glob("./data/dataset_new/valid/*")
-    INPUT_SIZE = (768, 768) # TODO: TILES ?
-    BATCH_SIZE = 8
-    DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
-    LEARNING_RATE = 1e-4
-    OUTPUT_DIR = './output/test_3/'
-    MAX_EPOCHS = 400
-
     # Enable cudnn auto-tuner to find the best algorithm to use for your hardware
     torch.manual_seed(1)
     if torch.cuda.is_available():
@@ -206,7 +195,7 @@ def main():
     valid_data_loader = make_data_loader(VALID_DATASET_ROOTS, 'ShipsDataset', INPUT_SIZE, False, BATCH_SIZE)
 
     # Create model
-    model = build_model('ShipsDetector', 6+1)
+    model = build_model('ShipsDetector', NUM_CLASSES)
     model.to(device)
 
     # Create optimizer

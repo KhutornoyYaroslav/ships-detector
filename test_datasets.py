@@ -7,7 +7,7 @@ from core.data.shipsdataset import ShipsDataset
 
 
 def test_dataset():
-    ROOT_DIRS = glob("./data/dataset_new/valid/*")
+    ROOT_DIRS = glob("./data/dataset/valid/*")
     TYPE = "ShipsDataset"
     INPUT_SIZE = (768, 768)
     IS_TRAIN = True

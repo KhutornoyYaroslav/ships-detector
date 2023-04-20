@@ -1,14 +1,13 @@
-import enum
 import torch
 import cv2 as cv
 import numpy as np
 from tqdm import tqdm
 from glob import glob
+from parameters import *
+from core.data import ShipsDataset
 from core.model import build_model
-from core.data import make_data_loader
 from core.utils.checkpoint import CheckPointer
 from core.data.transforms import ToCV2Image, Resize, ConvertFromInts, Clip, Normalize, ToTensor
-from core.data import ShipsDataset
 
 
 def infer(model, frames, input_size, device):
@@ -40,7 +39,7 @@ def infer(model, frames, input_size, device):
             scores = preds['scores'].cpu().numpy()
 
             for i, _ in enumerate(boxes):
-                if scores[i] < 0.9:
+                if scores[i] < PROB_THRESH:
                     continue
 
                 box = boxes[i]
@@ -55,10 +54,7 @@ def infer(model, frames, input_size, device):
 
 def main():
     # Parameters
-    FRAMES = sorted(glob("./data/frames_3/*"))
-    INPUT_SIZE = (768, 768)
-    DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
-    TRAINED_MODEL_DIR = './output/test_3/'
+    FRAMES = sorted(glob("./data/frames_1/*")) + sorted(glob("./data/frames_2/*")) + sorted(glob("./data/frames_3/*"))
 
     # Enable cudnn auto-tuner to find the best algorithm to use for your hardware
     torch.manual_seed(1)
@@ -70,12 +66,12 @@ def main():
     device = torch.device(DEVICE)
 
     # Create model
-    model = build_model('ShipsDetector', 6+1)
+    model = build_model('ShipsDetector', NUM_CLASSES)
     model.to(device)
 
     # Create checkpointer
     arguments = {"epoch": 0}
-    checkpointer = CheckPointer(model, None, None, TRAINED_MODEL_DIR, True)
+    checkpointer = CheckPointer(model, None, None, OUTPUT_DIR, True)
     extra_checkpoint_data = checkpointer.load()
     arguments.update(extra_checkpoint_data)
 
