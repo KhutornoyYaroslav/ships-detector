@@ -69,8 +69,7 @@ def infer(model, frames, input_size, device):
 
 def main():
     # Parameters
-    # FRAMES = sorted(glob("./data/frames_1/*")) + sorted(glob("./data/frames_2/*")) + sorted(glob("./data/frames_3/*"))
-    FRAMES = sorted(glob("./data/sasha/*"))
+    FRAMES = sorted(glob("./data/frames_1/*")) + sorted(glob("./data/frames_2/*")) + sorted(glob("./data/frames_3/*"))
 
     # Enable cudnn auto-tuner to find the best algorithm to use for your hardware
     torch.manual_seed(1)

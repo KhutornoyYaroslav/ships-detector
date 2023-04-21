@@ -1,12 +1,11 @@
 import torch
 import cv2 as cv
 import numpy as np
-from glob import glob
 from core.model import build_model
-from core.data import make_data_loader
 from core.utils.checkpoint import CheckPointer
 from core.data.transforms import ToCV2Image, Resize, ConvertFromInts, Clip, Normalize, ToTensor
 from core.data import ShipsDataset
+from parameters import *
 
 
 def init_model(model_dir):
@@ -21,7 +20,7 @@ def init_model(model_dir):
     device = torch.device(device_)
 
     # Create model
-    model = build_model('ShipsDetector', 7+1)
+    model = build_model('ShipsDetector', NUM_CLASSES)
     model.to(device)
 
     # Create checkpointer
@@ -53,20 +52,33 @@ def prepare_frame(frame, input_size, device):
     return imgs, cv_img
 
 
-def main():
-    # Parameters
-    TRAINED_MODEL_DIR = "./output/test_3/"
-    INPUT_SIZE = (768, 768)
+def resize_box(box, in_size, out_size):
+    width_k = out_size[1] / in_size[1]
+    height_k = out_size[0] / in_size[0]
 
+    box[0] = int(width_k * box[0])
+    box[1] = int(height_k * box[1])
+    box[2] = int(width_k * box[2])
+    box[3] = int(height_k * box[3])
+
+    return box
+
+
+def main():
     # Init model
-    model, device = init_model(TRAINED_MODEL_DIR)
+    model, device = init_model(OUTPUT_DIR)
 
     # Connect to camera
-    vidcap = cv.VideoCapture(1)
+    # vidcap = cv.VideoCapture(1)
+    # print(vidcap.set(cv.CAP_PROP_FRAME_WIDTH, 1280))
+
+    # Read video file
+    vidcap = cv.VideoCapture("./data/videos/IMG_4111.MOV")
 
     # Process frames
     while(vidcap.isOpened()):
         ret, frame = vidcap.read()
+        frame_orig_size = frame.shape[:2]
 
         if ret:
             imgs, cv_img = prepare_frame(frame, INPUT_SIZE, device)
@@ -74,8 +86,6 @@ def main():
             with torch.no_grad():
                 preds = model.infer_forward(imgs)
                 preds = preds[0] # Remove batch dimension
-
-                print(preds)
 
                 boxes = preds['boxes'].cpu().numpy()
                 labels = preds['labels'].cpu().numpy()
@@ -85,12 +95,12 @@ def main():
                     if scores[i] < 0.85:
                         continue
 
-                    box = boxes[i]
-                    cv.rectangle(cv_img, (int(box[0]), int(box[1])), (int(box[2]), int(box[3])), (0, 255, 0), 1)
+                    box = resize_box(boxes[i], cv_img.shape[:2], frame_orig_size)
+                    cv.rectangle(frame, (int(box[0]), int(box[1])), (int(box[2]), int(box[3])), (30, 220, 20), 2)
                     label_str = ShipsDataset.CLASSES_INT2STR[labels[i]] + ", {0:.2f}".format(scores[i])
-                    cv.putText(cv_img, label_str, (int(box[0]), int(box[1])), cv.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0))
+                    cv.putText(frame, label_str, (int(box[0]), int(box[1]) - 5), cv.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0))
 
-            cv.imshow('Frame', cv_img)
+            cv.imshow('Frame', frame)
             if cv.waitKey(1) & 0xFF == ord('q'):
                 return 1
         else:
